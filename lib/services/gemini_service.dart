@@ -6,7 +6,7 @@ import 'package:uuid/uuid.dart';
 
 class GeminiService {
   static const String _apiKey = String.fromEnvironment('GEMINI_API_KEY');
-  
+
   late final GenerativeModel _model;
   final _uuid = const Uuid();
 
@@ -16,9 +16,9 @@ class GeminiService {
         'Gemini API key not found. Please set GEMINI_API_KEY environment variable.',
       );
     }
-    
+
     _model = GenerativeModel(
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       apiKey: _apiKey,
       generationConfig: GenerationConfig(
         temperature: 0.2,
@@ -36,9 +36,9 @@ class GeminiService {
     try {
       final prompt = '${_getSystemPrompt()}\n\nText: "$text"';
       final content = [Content.text(prompt)];
-      
+
       final response = await _model.generateContent(content);
-      
+
       if (response.text == null || response.text!.isEmpty) {
         throw Exception('Gemini API에서 응답을 받지 못했습니다.');
       }
@@ -101,7 +101,7 @@ JSON 형식으로만 응답하며, 다음 키를 포함해야 합니다:
     try {
       // JSON 부분만 추출 (마크다운 코드 블록 및 기타 텍스트 제거)
       String jsonString = content.trim();
-      
+
       // 코드 블록 제거
       if (content.contains('```json')) {
         final startIndex = content.indexOf('```json') + 7;
@@ -116,11 +116,11 @@ JSON 형식으로만 응답하며, 다음 키를 포함해야 합니다:
           jsonString = content.substring(startIndex, endIndex).trim();
         }
       }
-      
+
       // JSON 객체 시작과 끝 찾기
       final jsonStart = jsonString.indexOf('{');
       final jsonEnd = jsonString.lastIndexOf('}');
-      
+
       if (jsonStart != -1 && jsonEnd != -1 && jsonEnd > jsonStart) {
         jsonString = jsonString.substring(jsonStart, jsonEnd + 1);
       }

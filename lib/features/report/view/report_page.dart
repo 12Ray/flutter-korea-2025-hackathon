@@ -1,52 +1,61 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../editor/provider/note_provider.dart';
+import '../../editor/provider/ai_provider.dart';
+import '../../editor/model/node_model.dart';
+import '../../editor/model/edge_model.dart';
 
 class ReportPage extends ConsumerWidget {
   const ReportPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notesAsync = ref.watch(noteProvider);
-    final statistics = ref.watch(noteStatisticsProvider);
+    final aiState = ref.watch(aiProvider);
 
-    return notesAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(
+    if (aiState.nodes.isEmpty) {
+      return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            Text('오류가 발생했습니다: $error'),
+            Icon(Icons.analytics_outlined, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              '아직 생성된 생각 지도가 없습니다.',
+              style: TextStyle(fontSize: 18, color: Colors.grey),
+            ),
+            SizedBox(height: 8),
+            Text(
+              '에디터에서 텍스트를 입력하고 생각 지도를 생성해보세요!',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
           ],
         ),
-      ),
-      data: (notes) => SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildOverviewCards(statistics),
-            const SizedBox(height: 24),
-            _buildEmotionChart(statistics),
-            const SizedBox(height: 24),
-            _buildTopKeywords(statistics),
-            const SizedBox(height: 24),
-            _buildRecentNotes(notes.take(5).toList()),
-          ],
-        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildCurrentSessionCard(aiState),
+          const SizedBox(height: 24),
+          _buildEmotionChart(aiState.nodes),
+          const SizedBox(height: 24),
+          _buildTopKeywords(aiState.nodes),
+          const SizedBox(height: 24),
+          _buildNodeDetails(aiState.nodes, aiState.edges),
+        ],
       ),
     );
   }
 
-  Widget _buildOverviewCards(NoteStatistics stats) {
+  Widget _buildCurrentSessionCard(aiState) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          '📊 전체 통계',
+          '📊 현재 세션 통계',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
@@ -54,45 +63,42 @@ class ReportPage extends ConsumerWidget {
           children: [
             Expanded(
               child: _buildStatCard(
-                icon: Icons.note,
-                title: '총 노트',
-                value: '${stats.totalNotes}개',
-                color: Colors.blue,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
                 icon: Icons.scatter_plot,
-                title: '총 노드',
-                value: '${stats.totalNodes}개',
+                title: '노드 수',
+                value: '${aiState.nodes.length}개',
                 color: Colors.green,
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                icon: Icons.linear_scale,
-                title: '총 연결',
-                value: '${stats.totalEdges}개',
-                color: Colors.orange,
-              ),
-            ),
             const SizedBox(width: 12),
             Expanded(
               child: _buildStatCard(
-                icon: Icons.trending_up,
-                title: '평균 노드',
-                value: '${stats.averageNodesPerNote.toStringAsFixed(1)}개',
-                color: Colors.purple,
+                icon: Icons.linear_scale,
+                title: '연결 수',
+                value: '${aiState.edges.length}개',
+                color: Colors.orange,
               ),
             ),
           ],
         ),
+        if (aiState.summary.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '💡 요약',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(aiState.summary),
+                ],
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -124,9 +130,15 @@ class ReportPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmotionChart(NoteStatistics stats) {
-    if (stats.emotionDistribution.isEmpty) {
+  Widget _buildEmotionChart(List<NodeModel> nodes) {
+    if (nodes.isEmpty) {
       return _buildEmptyChart('감정 분포', '아직 생성된 노드가 없습니다.');
+    }
+
+    // 감정 분포 계산
+    final emotionCounts = <String, int>{};
+    for (final node in nodes) {
+      emotionCounts[node.emotion] = (emotionCounts[node.emotion] ?? 0) + 1;
     }
 
     final emotionColors = {
@@ -150,10 +162,10 @@ class ReportPage extends ConsumerWidget {
               height: 200,
               child: PieChart(
                 PieChartData(
-                  sections: stats.emotionDistribution.entries.map((entry) {
+                  sections: emotionCounts.entries.map((entry) {
                     final emotion = entry.key;
                     final count = entry.value;
-                    final total = stats.emotionDistribution.values.fold<int>(
+                    final total = emotionCounts.values.fold<int>(
                       0,
                       (sum, val) => sum + val,
                     );
@@ -179,9 +191,10 @@ class ReportPage extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: stats.emotionDistribution.entries.map((entry) {
+        Wrap(
+          spacing: 16,
+          runSpacing: 8,
+          children: emotionCounts.entries.map((entry) {
             return Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -206,16 +219,25 @@ class ReportPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildTopKeywords(NoteStatistics stats) {
-    if (stats.topKeywords.isEmpty) {
-      return _buildEmptyChart('인기 키워드', '아직 생성된 키워드가 없습니다.');
+  Widget _buildTopKeywords(List<NodeModel> nodes) {
+    if (nodes.isEmpty) {
+      return _buildEmptyChart('키워드 분석', '아직 생성된 키워드가 없습니다.');
     }
+
+    // 키워드 빈도 계산
+    final keywordCounts = <String, int>{};
+    for (final node in nodes) {
+      keywordCounts[node.label] = (keywordCounts[node.label] ?? 0) + 1;
+    }
+
+    final sortedKeywords = keywordCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          '🔥 인기 키워드',
+          '🔥 키워드 분석',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
@@ -223,8 +245,10 @@ class ReportPage extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              children: stats.topKeywords.take(5).map((entry) {
-                final maxCount = stats.topKeywords.first.value;
+              children: sortedKeywords.take(5).map((entry) {
+                final maxCount = sortedKeywords.isNotEmpty
+                    ? sortedKeywords.first.value
+                    : 1;
                 final progress = entry.value / maxCount;
 
                 return Padding(
@@ -262,46 +286,65 @@ class ReportPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildRecentNotes(List notes) {
-    if (notes.isEmpty) {
-      return _buildEmptyChart('최근 노트', '아직 저장된 노트가 없습니다.');
-    }
-
+  Widget _buildNodeDetails(List<NodeModel> nodes, List<EdgeModel> edges) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          '📝 최근 노트',
+          '� 노드 상세정보',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
-        ...notes.map(
-          (note) => Card(
+        ...nodes.map(
+          (node) => Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor: Colors.blue.shade100,
-                child: Text('${note.nodes.length}'),
+                backgroundColor: _getEmotionColor(node.emotion),
+                child: Text(
+                  '${node.freq}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
               title: Text(
-                note.summary ?? '요약 없음',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                node.label,
+                style: const TextStyle(fontWeight: FontWeight.w500),
               ),
-              subtitle: Text(
-                note.rawText,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              trailing: Text(
-                _formatDate(note.createdAt),
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              subtitle: Text('감정: ${node.emotion} • 빈도: ${node.freq}'),
+              trailing: Icon(
+                _getEmotionIcon(node.emotion),
+                color: _getEmotionColor(node.emotion),
               ),
             ),
           ),
         ),
       ],
     );
+  }
+
+  Color _getEmotionColor(String emotion) {
+    switch (emotion) {
+      case 'positive':
+        return Colors.green;
+      case 'negative':
+        return Colors.red;
+      default:
+        return Colors.blue;
+    }
+  }
+
+  IconData _getEmotionIcon(String emotion) {
+    switch (emotion) {
+      case 'positive':
+        return Icons.sentiment_satisfied;
+      case 'negative':
+        return Icons.sentiment_dissatisfied;
+      default:
+        return Icons.sentiment_neutral;
+    }
   }
 
   Widget _buildEmptyChart(String title, String message) {
@@ -328,20 +371,5 @@ class ReportPage extends ConsumerWidget {
         ),
       ],
     );
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays == 0) {
-      return '오늘';
-    } else if (difference.inDays == 1) {
-      return '어제';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}일 전';
-    } else {
-      return '${date.month}/${date.day}';
-    }
   }
 }

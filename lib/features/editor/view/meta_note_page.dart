@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../provider/ai_provider.dart';
-import '../provider/note_provider.dart';
 import 'text_input_panel.dart';
 import 'node_graph_canvas.dart';
 import '../../report/view/report_page.dart';
@@ -54,12 +53,6 @@ class _MetaNotePageState extends ConsumerState<MetaNotePage>
           ],
         ),
         actions: [
-          // 저장 버튼
-          IconButton(
-            icon: const Icon(Icons.save_outlined),
-            onPressed: nodes.isNotEmpty ? _saveCurrentNote : null,
-            tooltip: '현재 생각 지도 저장',
-          ),
           // 설정 버튼
           IconButton(
             icon: const Icon(Icons.settings_outlined),
@@ -219,29 +212,6 @@ class _MetaNotePageState extends ConsumerState<MetaNotePage>
     ref
         .read(aiProvider.notifier)
         .updateNodePosition(node.id, offset.dx, offset.dy);
-  }
-
-  void _saveCurrentNote() async {
-    final aiState = ref.read(aiProvider);
-    if (aiState.nodes.isEmpty) {
-      _showSnackBar('저장할 내용이 없습니다.', isError: true);
-      return;
-    }
-
-    try {
-      await ref
-          .read(noteProvider.notifier)
-          .saveNote(
-            nodes: aiState.nodes,
-            edges: aiState.edges,
-            rawText: aiState.originalText,
-            summary: aiState.summary,
-          );
-
-      _showSnackBar('생각 지도가 성공적으로 저장되었습니다!');
-    } catch (e) {
-      _showSnackBar('저장 중 오류가 발생했습니다: $e', isError: true);
-    }
   }
 
   void _showNodeEditDialog(node) {

@@ -318,3 +318,6 @@ Target of URI doesn't exist: 'package:google_generative_ai/...'
 [⭐ Star](https://github.com/your-username/metanote) · [🍴 Fork](https://github.com/your-username/metanote/fork) · [📢 Issues](https://github.com/your-username/metanote/issues)
 
 </div>
+
+
+///깃허브올리기용
