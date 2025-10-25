@@ -1,0 +1,157 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# ========================================
+# 🔒 SECURITY & API KEYS (MetaNote 보안)
+# ========================================
+
+# API Keys & Secrets - 절대 커밋하지 마세요!
+.env
+.env.local
+.env.production
+.env.development
+*.key
+*.pem
+*.p12
+*.keystore
+key.properties
+
+# Platform-specific API key files
+android/local.properties
+android/key.properties
+ios/Flutter/Debug.xcconfig
+ios/Flutter/Release.xcconfig
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
+
+# IDE Configuration files (API keys may be included)
+.vscode/launch.json
+.vscode/settings.json
+.idea/runConfigurations/
+*.launch
+
+# Firebase & Google Services
+firebase_options.dart
+google-services.json
+GoogleService-Info.plist
+
+# Certificate files
+*.crt
+*.cert
+*.ca-bundle
+*.p7b
+*.p7c
+*.pfx
+
+# Database files with sensitive data
+*.db
+*.sqlite
+*.sqlite3
+*.realm
+
+# Temporary files that might contain secrets
+*.tmp
+*.temp
+*.cache
+secrets/
+config/secrets/
+
+# ========================================
+# 📱 ADDITIONAL FLUTTER/MOBILE IGNORES
+# ========================================
+
+# iOS Specific
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/flutter_assets/
+ios/ServiceDefinitions.json
+ios/Runner/GeneratedPluginRegistrant.*
+
+# Android Specific
+android/.gradle/
+android/app/src/main/gen/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/.gradle
+android/captures/
+android/gradle-wrapper.properties
+
+# Web Specific
+web/icons/
+web/splash/
+
+# Desktop Specific
+linux/flutter/ephemeral/
+macos/Flutter/ephemeral/
+windows/flutter/ephemeral/
+
+# Test Coverage
+coverage/
+lcov.info
+
+# Generated Files
+*.g.dart
+*.freezed.dart
+*.config.dart
+*.chopper.dart
+
+# ========================================
+# 📊 ANALYTICS & LOGS
+# ========================================
+
+# Crash reports
+*.crashlytics/
+firebase_crashlytics/
+crashlytics-build.properties
+
+# Analytics
+analytics/
+*.analytics
+
+# Custom logs
+logs/
+*.log.*
